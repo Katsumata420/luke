@@ -7,7 +7,7 @@ import os
 import random
 from contextlib import closing
 from multiprocessing.pool import Pool
-from typing import Optional
+from typing import List, Optional
 
 import click
 import tensorflow as tf
@@ -29,7 +29,7 @@ from luke.utils.sentence_splitter import SentenceSplitter
 
 logger = logging.getLogger(__name__)
 
-DATASET_FILE = "dataset.tf"
+DATASET_FILE = "dataset.jsonl"
 
 # global variables used in pool workers
 _dump_db = _tokenizer = _sentence_splitter = _entity_vocab = _max_num_tokens = _max_entity_length = None
@@ -197,8 +197,7 @@ class WikipediaPretrainingDataset:
         entity_vocab.save(os.path.join(output_dir, ENTITY_VOCAB_FILE))
         number_of_items = 0
         tf_file = os.path.join(output_dir, DATASET_FILE)
-        options = tf.io.TFRecordOptions(tf.compat.v1.io.TFRecordCompressionType.GZIP)
-        with TFRecordWriter(tf_file, options=options) as writer:
+        with open(tf_file, "w") as writer:
             with tqdm(total=len(target_titles)) as pbar:
                 initargs = (
                     dump_db,
@@ -339,7 +338,7 @@ class WikipediaPretrainingDataset:
                 sentences.append((sent_words, sent_links))
 
         ret = []
-        words = []
+        words: List[str] = []
         links = []
         for i, (sent_words, sent_links) in enumerate(sentences):
             links += [(id_, start + len(words), end + len(words)) for id_, start, end in sent_links]
@@ -347,8 +346,7 @@ class WikipediaPretrainingDataset:
             if i == len(sentences) - 1 or len(words) + len(sentences[i + 1][0]) > _max_num_tokens:
                 if links or _include_sentences_without_entities:
                     links = links[:_max_entity_length]
-                    word_ids = _tokenizer.convert_tokens_to_ids(words)
-                    assert _min_sentence_length <= len(word_ids) <= _max_num_tokens
+                    assert _min_sentence_length <= len(words) <= _max_num_tokens
                     entity_ids = [id_ for id_, _, _, in links]
                     assert len(entity_ids) <= _max_entity_length
                     entity_position_ids = itertools.chain(
@@ -357,18 +355,14 @@ class WikipediaPretrainingDataset:
                             for _, start, end in links
                         ]
                     )
-
-                    example = tf.train.Example(
-                        features=tf.train.Features(
-                            feature=dict(
-                                page_id=tf.train.Feature(int64_list=tf.train.Int64List(value=[page_id])),
-                                word_ids=tf.train.Feature(int64_list=tf.train.Int64List(value=word_ids)),
-                                entity_ids=tf.train.Feature(int64_list=tf.train.Int64List(value=entity_ids)),
-                                entity_position_ids=tf.train.Feature(int64_list=Int64List(value=entity_position_ids)),
-                            )
-                        )
+                    feature=dict(
+                        page_id=page_id,
+                        words=words,
+                        entity_ids=entity_ids,
+                        entity_position_ids=entity_position_ids,
                     )
-                    ret.append((example.SerializeToString()))
+                    feature_string = json.dumps(feature, ensure_ascii=False) + "\n"
+                    ret.append((feature_string))
 
                 words = []
                 links = []
