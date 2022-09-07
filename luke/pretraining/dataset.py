@@ -349,12 +349,12 @@ class WikipediaPretrainingDataset:
                     assert _min_sentence_length <= len(words) <= _max_num_tokens
                     entity_ids = [id_ for id_, _, _, in links]
                     assert len(entity_ids) <= _max_entity_length
-                    entity_position_ids = itertools.chain(
+                    entity_position_ids = list(itertools.chain(
                         *[
                             (list(range(start, end)) + [-1] * (_max_mention_length - end + start))[:_max_mention_length]
                             for _, start, end in links
                         ]
-                    )
+                    ))
                     feature=dict(
                         page_id=page_id,
                         words=words,
