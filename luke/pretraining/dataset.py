@@ -7,7 +7,7 @@ import os
 import random
 from contextlib import closing
 from multiprocessing.pool import Pool
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import click
 import tensorflow as tf
@@ -308,6 +308,7 @@ class WikipediaPretrainingDataset:
                 cur = sent_start
                 sent_words = []
                 sent_links = []
+                original_sent_links = []  # detokenized text に対する entity 情報
                 # Look for links that are within the tokenized sentence.
                 # If a link is found, we separate the sentences across the link and tokenize them.
                 for link_title, link_start, link_end in paragraph_links:
@@ -324,6 +325,7 @@ class WikipediaPretrainingDataset:
                     sent_words += sent_tokenized
 
                     sent_links.append((entity_id, len(sent_words), len(sent_words) + len(link_words)))
+                    original_sent_links.append((link_title, entity_id, link_start, link_end))
                     sent_words += link_words
                     cur = link_end
 
@@ -335,12 +337,22 @@ class WikipediaPretrainingDataset:
 
                 if len(sent_words) < _min_sentence_length or len(sent_words) > _max_num_tokens:
                     continue
-                sentences.append((sent_words, sent_links))
+                original_text = paragraph_text[sent_start:sent_end]
+                sentences.append((sent_words, sent_links, original_text, original_sent_links))
 
         ret = []
         words: List[str] = []
         links = []
-        for i, (sent_words, sent_links) in enumerate(sentences):
+        for i, (sent_words, sent_links, original_text, original_sent_links) in enumerate(sentences):
+            feature: Dict[str, Any] = dict(
+                page_id=page_id,
+                text=original_text,
+                selected_entities=list(original_sent_links),
+                other_entities=[],
+            )
+            feature_string = json.dumps(feature, ensure_ascii=False) + "\n"
+            ret.append((feature_string))
+            """
             links += [(id_, start + len(words), end + len(words)) for id_, start, end in sent_links]
             words += sent_words
             if i == len(sentences) - 1 or len(words) + len(sentences[i + 1][0]) > _max_num_tokens:
@@ -366,4 +378,5 @@ class WikipediaPretrainingDataset:
 
                 words = []
                 links = []
+            """
         return ret
