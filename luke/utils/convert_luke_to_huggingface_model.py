@@ -4,8 +4,18 @@ from collections import OrderedDict
 
 import click
 import torch
-from transformers import LukeConfig, LukeForMaskedLM, AutoTokenizer
+from transformers import LukeConfig, LukeForMaskedLM, AutoTokenizer, LukeJapaneseTokenizer
 from transformers.tokenization_utils_base import AddedToken
+
+RoBERTa2BERT = {
+    "lm_head.bias": "cls.predictions.bias",
+    "lm_head.dense.weight": "cls.predictions.transform.dense.weight",
+    "lm_head.dense.bias": "cls.predictions.transform.dense.bias",
+    "lm_head.layer_norm.weight": "cls.predictions.transform.LayerNorm.weight",
+    "lm_head.layer_norm.bias": "cls.predictions.transform.LayerNorm.bias",
+    "lm_head.decoder.weight": "cls.predictions.decoder.weight",
+    "lm_head.decoder.bias": "cls.predictions.decoder.bias",
+}
 
 
 @click.command()
@@ -32,7 +42,7 @@ from transformers.tokenization_utils_base import AddedToken
 )
 @click.option(
     "--tokenizer-class",
-    type=click.Choice(["LukeTokenizer", "MLukeTokenizer"]),
+    type=click.Choice(["LukeTokenizer", "MLukeTokenizer", "LukeJapaneseTokenizer"]),
     help="The Tokenizer class to use in transformers.",
     required=True,
 )
@@ -57,6 +67,15 @@ def convert_luke_to_huggingface_model(
 
     # Load in the weights from the checkpoint_path
     state_dict = torch.load(checkpoint_path, map_location="cpu")["module"]
+
+    # convert bert-weight-name 2 robert-weight-name using dict
+    # print([k for k in sorted(state_dict.keys())])
+    for roberta_key, bert_key in RoBERTa2BERT.items():
+        state_dict[roberta_key] = state_dict[bert_key]
+        state_dict.pop(bert_key)
+    # prune NSP module
+    state_dict.pop("cls.seq_relationship.weight")
+    state_dict.pop("cls.seq_relationship.bias")
 
     # Load the entity vocab file
     entity_vocab = load_original_entity_vocab(entity_vocab_path)
@@ -83,7 +102,8 @@ def convert_luke_to_huggingface_model(
     with open(os.path.join(transformers_model_save_path, "entity_vocab.json"), "w") as f:
         json.dump(entity_vocab, f)
 
-    tokenizer = AutoTokenizer.from_pretrained(transformers_model_save_path)
+    # tokenizer = AutoTokenizer.from_pretrained(transformers_model_save_path)
+    tokenizer = LukeJapaneseTokenizer.from_pretrained(transformers_model_save_path)
 
     # Initialize the embeddings of the special tokens
     ent_init_index = tokenizer.convert_tokens_to_ids(["@"])[0]

@@ -351,6 +351,8 @@ def pretrain(**kwargs):
 
             if args.save_interval_steps and global_step % args.save_interval_steps == 0:
                 save_checkpoint(checkpoint_dir, f"step{global_step:07}", model, current_epoch, global_step)
+                break
+
 
         if global_step == num_train_steps:
             break
