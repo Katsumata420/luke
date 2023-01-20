@@ -352,31 +352,4 @@ class WikipediaPretrainingDataset:
             )
             feature_string = json.dumps(feature, ensure_ascii=False) + "\n"
             ret.append((feature_string))
-            """
-            links += [(id_, start + len(words), end + len(words)) for id_, start, end in sent_links]
-            words += sent_words
-            if i == len(sentences) - 1 or len(words) + len(sentences[i + 1][0]) > _max_num_tokens:
-                if links or _include_sentences_without_entities:
-                    links = links[:_max_entity_length]
-                    assert _min_sentence_length <= len(words) <= _max_num_tokens
-                    entity_ids = [id_ for id_, _, _, in links]
-                    assert len(entity_ids) <= _max_entity_length
-                    entity_position_ids = list(itertools.chain(
-                        *[
-                            (list(range(start, end)) + [-1] * (_max_mention_length - end + start))[:_max_mention_length]
-                            for _, start, end in links
-                        ]
-                    ))
-                    feature=dict(
-                        page_id=page_id,
-                        words=words,
-                        entity_ids=entity_ids,
-                        entity_position_ids=entity_position_ids,
-                    )
-                    feature_string = json.dumps(feature, ensure_ascii=False) + "\n"
-                    ret.append((feature_string))
-
-                words = []
-                links = []
-            """
         return ret
