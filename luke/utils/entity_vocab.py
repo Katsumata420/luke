@@ -60,6 +60,9 @@ class EntityVocab:
         elif "mluke" in vocab_file:
             logger.info("Detected vocab file type: pretrained transformers")
             self._from_pretrained_mluke(vocab_file)
+        elif "luke-japanese-base" in vocab_file:
+            logger.info("Detected vocab file type: pretrained transformers")
+            self._from_pretrained_mluke(vocab_file)
         elif "luke" in vocab_file:
             logger.info("Detected vocab file type: pretrained transformers")
             self._from_pretrained_luke(vocab_file)
