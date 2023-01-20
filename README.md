@@ -22,6 +22,8 @@ classification), and
 This repository contains the source code to pretrain the model and fine-tune it
 to solve downstream tasks.
 
+If you want to make the pretrain dataset, see `README-PRETRAIN-DATA.md`.
+
 ## News
 
 **November 9, 2022: The large version of LUKE-Japanese is available**
