@@ -1,5 +1,12 @@
 # How to make pretrain dataset
 
+The EL data can be created using Luke script from Wikipedia href relations.
+
+The dataset example is following:
+```json
+{"text": ..., "selected_entities": [[entity_title, entity_id, start, end], ...]}
+```
+
 ## 1. Prepare your environment
 
 ```bash
