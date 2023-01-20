@@ -77,10 +77,10 @@ python luke/cli.py build-interwiki-db latest-all.json.bz2 interwiki.db
 Create entity vocabularies for each language and then combine them with the interwiki DB.
 ```bash
 for l in ar bn de nl el en es fi fr hi id it ja ko pl pt ru sv sw te th tr vi zh
-python luke/cli.py  build-entity-vocab "${l}wiki.db" "mluke_entity_vocab_${l}.jsonl"
+python luke/cli.py  build-entity-vocab "${l}wiki.db" "mluke_entity_vocab_${l}.jsonl" "--language ${l}" 
 
 
-COMMAND="python luke/cli.py vuild-interwiki-db -i interwiki.db -o mluke_entity_vocab.jsonl --vocab-size 1200000 --min-num-languages 3"
+COMMAND="python luke/cli.py build_multilingual_entity_vocab -i interwiki.db -o mluke_entity_vocab.jsonl --vocab-size 1200000 --min-num-languages 3"
 # add options by for loop because there are so many..
 for l in ar bn de nl el en es fi fr hi id it ja ko pl pt ru sv sw te th tr vi zh
 COMMAND=$COMMAND+" -v mluke_entity_vocab_${l}.jsonl"
@@ -116,7 +116,8 @@ python luke/cli.py \
     <BASE_MODEL_NAME> \
     mluke_entity_vocab.jsonl \
     "mluke_pretraining_dataset/${l}" \
-    --sentence-splitter=$l
+    --sentence-splitter=$l \
+    --language $l 
 ```
 
 ## 5. Compute the number of training steps
@@ -229,6 +230,8 @@ Specify the saved files and choose the appropriate tokenizer class (`--tokenizer
 
 The option `--set-entity-aware-attention-default` specifies whether the weights for the entity-aware attention is used by default when later loading the model from Transformers. 
 Note that even when you didn't use the entity-aware attention during pretraining, the weights are copied from the standard attention, and you can still use the entity-aware attention during fine-tuning.
+
+You can also specify `--remove-entity-embeddings` option to make a lite-weight model without entity embeddings but still with knowledge-enhanced word representations.
 ```bash
 python luke/cli.py \
     convert-luke-to-huggingface-model \ 
