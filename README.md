@@ -22,6 +22,9 @@ classification), and
 This repository contains the source code to pretrain the model and fine-tune it
 to solve downstream tasks.
 
+If you want to use this branch, use `pip install -r requirements_ja.txt`.
+(The transformers libs is used from https://github.com/Katsumata420/transformers/tree/luke-japanese-tokenizer.)
+
 ## News
 
 **April 13, 2022: The mLUKE fine-tuning code is available**
